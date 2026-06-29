@@ -64,13 +64,46 @@ export default function EditorPage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate save
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSaving(false);
+    try {
+      await fetch('/api/configuraciones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plantilla_id: template.id,
+          usuario_email: 'usuario@email.com',
+          usuario_nombre: 'Usuario',
+          colores: config.colors,
+          tipografia: config.typography,
+          contenido: config.content,
+        }),
+      });
+      alert('¡Guardado exitosamente!');
+    } catch (error) {
+      alert('Error al guardar');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSendToTeam = () => {
-    alert('¡Configuración enviada al equipo de desarrollo! Se pondrán en contacto contigo en un plazo de 24 horas.');
+  const handleSendToTeam = async () => {
+    try {
+      await fetch('/api/configuraciones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plantilla_id: template.id,
+          usuario_email: 'usuario@email.com',
+          usuario_nombre: 'Usuario',
+          colores: config.colors,
+          tipografia: config.typography,
+          contenido: config.content,
+          estado: 'pending',
+        }),
+      });
+      alert('¡Configuración enviada al equipo de desarrollo! Se pondrán en contacto contigo en un plazo de 24 horas.');
+    } catch (error) {
+      alert('Error al enviar');
+    }
   };
 
   const renderPanel = () => {
@@ -101,7 +134,6 @@ export default function EditorPage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
-      {/* Top Bar */}
       <header className="h-14 border-b border-border/50 glass flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-4">
           <Link href="/marketplace">
@@ -118,7 +150,6 @@ export default function EditorPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Viewport Switcher */}
           <div className="flex items-center gap-1 p-1 rounded-lg bg-secondary">
             {[
               { id: 'desktop' as ViewportSize, icon: Monitor },
@@ -139,7 +170,6 @@ export default function EditorPage() {
 
           <div className="h-6 w-px bg-border" />
 
-          {/* Undo/Redo */}
           <Button variant="ghost" size="icon" className="h-8 w-8">
             <Undo className="w-4 h-4" />
           </Button>
@@ -149,7 +179,6 @@ export default function EditorPage() {
 
           <div className="h-6 w-px bg-border" />
 
-          {/* Actions */}
           <Button variant="outline" size="sm">
             <Eye className="w-4 h-4 mr-2" />
             Vista previa
@@ -170,14 +199,12 @@ export default function EditorPage() {
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar - Panel Navigation */}
         <EditorSidebar
           panels={panels}
           activePanel={activePanel}
           setActivePanel={setActivePanel}
         />
 
-        {/* Customization Panel */}
         <motion.div
           className="w-80 border-r border-border/50 glass overflow-y-auto shrink-0"
           initial={{ opacity: 0, x: -20 }}
@@ -199,17 +226,16 @@ export default function EditorPage() {
           </div>
         </motion.div>
 
-        {/* Preview Area */}
         <div className="flex-1 bg-secondary/30 p-4 overflow-auto flex flex-col">
-  <div
-    className={cn(
-      'mx-auto transition-all duration-300',
-      viewport === 'desktop' && 'w-full max-w-[1200px]',
-      viewport === 'tablet' && 'w-[768px]',
-      viewport === 'mobile' && 'w-[375px]'
-    )}
-    style={{ minHeight: '900px' }}
-  >
+          <div
+            className={cn(
+              'mx-auto transition-all duration-300',
+              viewport === 'desktop' && 'w-full max-w-[1200px]',
+              viewport === 'tablet' && 'w-[768px]',
+              viewport === 'mobile' && 'w-[375px]'
+            )}
+            style={{ minHeight: '900px' }}
+          >
             <EditorPreview config={config} template={template} />
           </div>
         </div>
