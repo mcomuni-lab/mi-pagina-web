@@ -1,19 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { 
+import {
   Upload, Plus, Search, MoreVertical, Edit, Trash2, Eye, Check,
   X, Clock, Users, FileText, LayoutGrid, Settings, Bell,
   Image as ImageIcon, FolderOpen, Mail, Calendar, DollarSign,
-  TrendingUp, Package
+  TrendingUp, Package, CheckCircle2, AlertCircle, Loader2
 } from "lucide-react"
 import { templates, categories } from "@/lib/templates"
 
@@ -77,21 +77,19 @@ const mockRequests: ClientRequest[] = [
   }
 ]
 
-const mockUsers = [
-  { id: "user-001", name: "John Smith", email: "john@company.com", plan: "Pro", templatesUsed: 3, joinedAt: "2024-01-05" },
-  { id: "user-002", name: "Maria Garcia", email: "maria@restaurant.com", plan: "Basic", templatesUsed: 1, joinedAt: "2024-01-10" },
-  { id: "user-003", name: "Alex Johnson", email: "alex@startup.io", plan: "Enterprise", templatesUsed: 8, joinedAt: "2023-12-15" },
-  { id: "user-004", name: "Sarah Williams", email: "sarah@design.co", plan: "Pro", templatesUsed: 5, joinedAt: "2024-01-02" },
-]
-
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("templates")
   const [searchQuery, setSearchQuery] = useState("")
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<ClientRequest | null>(null)
   const [newTemplate, setNewTemplate] = useState({
-    name: "", category: "", description: "", price: "", previewImage: ""
+    name: "", category: "", description: "", price: "", previewUrl: ""
   })
+  const [zipFile, setZipFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState<"idle" | "success" | "error">("idle")
+  const [uploadMessage, setUploadMessage] = useState("")
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const stats = [
     { label: "Total Templates", value: templates.length.toString(), icon: Package, change: "+2 this week" },
@@ -110,10 +108,57 @@ export default function AdminPage() {
     }
   }
 
-  const handleUploadTemplate = () => {
-    console.log("Uploading template:", newTemplate)
-    setShowUploadModal(false)
-    setNewTemplate({ name: "", category: "", description: "", price: "", previewImage: "" })
+  const handleZipSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && file.name.endsWith(".zip")) {
+      setZipFile(file)
+      setUploadStatus("idle")
+      setUploadMessage("")
+    }
+  }
+
+  const handleUploadTemplate = async () => {
+    if (!newTemplate.name || !newTemplate.category || !newTemplate.price || !zipFile) {
+      setUploadStatus("error")
+      setUploadMessage("Completa todos los campos y selecciona un archivo ZIP.")
+      return
+    }
+
+    setUploading(true)
+    setUploadStatus("idle")
+
+    try {
+      const formData = new FormData()
+      formData.append("name", newTemplate.name)
+      formData.append("category", newTemplate.category)
+      formData.append("description", newTemplate.description)
+      formData.append("price", newTemplate.price)
+      formData.append("previewUrl", newTemplate.previewUrl)
+      formData.append("file", zipFile)
+
+      const res = await fetch("/api/admin/upload-template", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Error al subir")
+
+      setUploadStatus("success")
+      setUploadMessage(`¡Plantilla "${newTemplate.name}" publicada correctamente!`)
+      setTimeout(() => {
+        setShowUploadModal(false)
+        setNewTemplate({ name: "", category: "", description: "", price: "", previewUrl: "" })
+        setZipFile(null)
+        setUploadStatus("idle")
+        setUploadMessage("")
+      }, 2000)
+    } catch (err: any) {
+      setUploadStatus("error")
+      setUploadMessage(err.message || "Error inesperado")
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
@@ -141,12 +186,7 @@ export default function AdminPage() {
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {stats.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
+              <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
                 <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -278,51 +318,9 @@ export default function AdminPage() {
             {/* Users Tab */}
             <TabsContent value="users" className="space-y-6">
               <Card className="bg-card/50 border-border/50">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border/50">
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">User</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Plan</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Templates Used</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Joined</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mockUsers.map((user) => (
-                        <tr key={user.id} className="border-b border-border/50 last:border-0">
-                          <td className="p-4">
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                <span className="text-sm font-medium text-primary">{user.name.split(" ").map(n => n[0]).join("")}</span>
-                              </div>
-                              <div>
-                                <p className="font-medium text-foreground">{user.name}</p>
-                                <p className="text-sm text-muted-foreground">{user.email}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <Badge variant="outline" className={
-                              user.plan === "Enterprise" ? "bg-purple-500/20 text-purple-400 border-purple-500/30" :
-                              user.plan === "Pro" ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
-                              "bg-muted text-muted-foreground"
-                            }>{user.plan}</Badge>
-                          </td>
-                          <td className="p-4 text-foreground">{user.templatesUsed}</td>
-                          <td className="p-4 text-muted-foreground">{user.joinedAt}</td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-2">
-                              <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4" /></Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  Ve a <span className="text-primary font-medium">Usuarios</span> en el menú lateral para gestionar usuarios.
+                </CardContent>
               </Card>
             </TabsContent>
 
@@ -361,43 +359,76 @@ export default function AdminPage() {
       {/* Upload Template Modal */}
       <AnimatePresence>
         {showUploadModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowUploadModal(false)}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => !uploading && setShowUploadModal(false)}>
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-card border border-border rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-foreground">Upload New Template</h2>
-                <Button variant="ghost" size="icon" onClick={() => setShowUploadModal(false)}><X className="h-5 w-5" /></Button>
+                <h2 className="text-xl font-semibold text-foreground">Subir Nueva Plantilla</h2>
+                <Button variant="ghost" size="icon" onClick={() => !uploading && setShowUploadModal(false)}><X className="h-5 w-5" /></Button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Template Name</label>
-                  <Input placeholder="e.g., Gym Pro" value={newTemplate.name} onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })} className="bg-background/50 border-border/50" />
+                  <label className="text-sm font-medium text-foreground mb-2 block">Nombre de la plantilla *</label>
+                  <Input placeholder="ej. Gym Pro" value={newTemplate.name} onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })} className="bg-background/50 border-border/50" disabled={uploading} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Category</label>
-                  <Select value={newTemplate.category} onValueChange={(value) => setNewTemplate({ ...newTemplate, category: value })}>
-                    <SelectTrigger className="bg-background/50 border-border/50"><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Categoría *</label>
+                  <Select value={newTemplate.category} onValueChange={(value) => setNewTemplate({ ...newTemplate, category: value })} disabled={uploading}>
+                    <SelectTrigger className="bg-background/50 border-border/50"><SelectValue placeholder="Selecciona categoría" /></SelectTrigger>
                     <SelectContent>{categories.map(cat => (<SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>))}</SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Description</label>
-                  <Textarea placeholder="Describe your template..." value={newTemplate.description} onChange={(e) => setNewTemplate({ ...newTemplate, description: e.target.value })} className="bg-background/50 border-border/50 min-h-[100px]" />
+                  <label className="text-sm font-medium text-foreground mb-2 block">Descripción</label>
+                  <Textarea placeholder="Describe tu plantilla..." value={newTemplate.description} onChange={(e) => setNewTemplate({ ...newTemplate, description: e.target.value })} className="bg-background/50 border-border/50 min-h-[80px]" disabled={uploading} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Price (USD)</label>
-                  <Input type="number" placeholder="49" value={newTemplate.price} onChange={(e) => setNewTemplate({ ...newTemplate, price: e.target.value })} className="bg-background/50 border-border/50" />
+                  <label className="text-sm font-medium text-foreground mb-2 block">Precio (USD) *</label>
+                  <Input type="number" placeholder="49" value={newTemplate.price} onChange={(e) => setNewTemplate({ ...newTemplate, price: e.target.value })} className="bg-background/50 border-border/50" disabled={uploading} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Preview Image</label>
-                  <div className="border-2 border-dashed border-border/50 rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-                    <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Click to upload or drag and drop</p>
-                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 5MB</p>
+                  <label className="text-sm font-medium text-foreground mb-2 block">URL de imagen de preview (opcional)</label>
+                  <Input placeholder="https://..." value={newTemplate.previewUrl} onChange={(e) => setNewTemplate({ ...newTemplate, previewUrl: e.target.value })} className="bg-background/50 border-border/50" disabled={uploading} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Archivo ZIP de la plantilla *</label>
+                  <input ref={fileInputRef} type="file" accept=".zip" onChange={handleZipSelect} className="hidden" />
+                  <div
+                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${zipFile ? "border-primary/70 bg-primary/5" : "border-border/50 hover:border-primary/50"}`}
+                    onClick={() => !uploading && fileInputRef.current?.click()}
+                  >
+                    {zipFile ? (
+                      <>
+                        <CheckCircle2 className="h-8 w-8 text-primary mx-auto mb-2" />
+                        <p className="text-sm text-foreground font-medium">{zipFile.name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{(zipFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                        <p className="text-xs text-primary mt-1">Clic para cambiar</p>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Clic para seleccionar archivo ZIP</p>
+                        <p className="text-xs text-muted-foreground mt-1">Solo archivos .zip</p>
+                      </>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-3 pt-4">
-                  <Button variant="outline" className="flex-1" onClick={() => setShowUploadModal(false)}>Cancel</Button>
-                  <Button className="flex-1 bg-primary hover:bg-primary/90" onClick={handleUploadTemplate}><Upload className="h-4 w-4 mr-2" />Publish Template</Button>
+
+                {uploadStatus !== "idle" && (
+                  <div className={`flex items-center gap-2 p-3 rounded-xl text-sm ${uploadStatus === "success" ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"}`}>
+                    {uploadStatus === "success" ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
+                    {uploadMessage}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 pt-2">
+                  <Button variant="outline" className="flex-1" onClick={() => !uploading && setShowUploadModal(false)} disabled={uploading}>Cancelar</Button>
+                  <Button className="flex-1 bg-primary hover:bg-primary/90" onClick={handleUploadTemplate} disabled={uploading}>
+                    {uploading ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Subiendo...</>
+                    ) : (
+                      <><Upload className="h-4 w-4 mr-2" />Publicar Plantilla</>
+                    )}
+                  </Button>
                 </div>
               </div>
             </motion.div>
