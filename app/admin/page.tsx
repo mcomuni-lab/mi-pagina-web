@@ -91,7 +91,8 @@ export default function AdminPage() {
   const [newTemplate, setNewTemplate] = useState({
     name: "", category: "", description: "", price: "", previewUrl: ""
   })
-    useEffect(() => {
+
+  useEffect(() => {
     cargarPlantillas()
   }, [])
 
@@ -99,20 +100,21 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/plantillas")
       const data = await res.json()
-
       setTemplatesDB(data)
     } catch (error) {
       console.error(error)
     }
   }
+
   const [zipFile, setZipFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<"idle" | "success" | "error">("idle")
   const [uploadMessage, setUploadMessage] = useState("")
   const [templatesDB, setTemplatesDB] = useState<any[]>([])
   const [showEditModal, setShowEditModal] = useState(false)
-const [editingTemplate, setEditingTemplate] = useState<any>(null)
-const [previewImage, setPreviewImage] = useState<File | null>(null)
+  const [editingTemplate, setEditingTemplate] = useState<any>(null)
+  const [previewImage, setPreviewImage] = useState<File | null>(null)
+  const [editPreviewImage, setEditPreviewImage] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const stats = [
@@ -160,8 +162,8 @@ const [previewImage, setPreviewImage] = useState<File | null>(null)
       formData.append("file", zipFile)
 
       if (previewImage) {
-  formData.append("image", previewImage)
-}
+        formData.append("image", previewImage)
+      }
 
       const res = await fetch("/api/admin/upload-template", {
         method: "POST",
@@ -177,22 +179,26 @@ const [previewImage, setPreviewImage] = useState<File | null>(null)
         setShowUploadModal(false)
         setNewTemplate({ name: "", category: "", description: "", price: "", previewUrl: "" })
         setZipFile(null)
+        setPreviewImage(null)
         setUploadStatus("idle")
         setUploadMessage("")
+        cargarPlantillas()
       }, 2000)
     } catch (err: any) {
-  setUploadStatus("error")
-  setUploadMessage(err.message || "Error inesperado")
-} finally {
-  setUploading(false)
-}
-}
-const abrirEditar = (template: any) => {
-  setEditingTemplate(template)
-  setShowEditModal(true)
-}
+      setUploadStatus("error")
+      setUploadMessage(err.message || "Error inesperado")
+    } finally {
+      setUploading(false)
+    }
+  }
 
-return (
+  const abrirEditar = (template: any) => {
+    setEditingTemplate(template)
+    setEditPreviewImage(null)
+    setShowEditModal(true)
+  }
+
+  return (
     <div className="min-h-screen bg-background">
       <main className="flex-1 p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
@@ -272,88 +278,96 @@ return (
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {templatesDB
-  .filter((t) =>
-    t.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-  .map((template, index) => (
-                  <motion.div key={template.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * 0.05 }}>
-                    <Card className="bg-card/50 border-border/50 overflow-hidden group">
-                      <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-accent/20">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
+                  .filter((t) =>
+                    t.name.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map((template, index) => (
+                    <motion.div key={template.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * 0.05 }}>
+                      <Card className="bg-card/50 border-border/50 overflow-hidden group">
+                        <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-accent/20">
+                          {template.image_url ? (
+                            <img
+                              src={template.image_url}
+                              alt={template.name}
+                              className="absolute inset-0 w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <Button size="sm" variant="secondary"><Eye className="h-4 w-4 mr-1" />Preview</Button>
+                            <Button size="sm" variant="secondary"><Edit className="h-4 w-4 mr-1" />Edit</Button>
+                          </div>
                         </div>
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          <Button size="sm" variant="secondary"><Eye className="h-4 w-4 mr-1" />Preview</Button>
-                          <Button size="sm" variant="secondary"><Edit className="h-4 w-4 mr-1" />Edit</Button>
-                        </div>
-                      </div>
-                      <CardContent className="p-4">
-  <div className="flex items-start justify-between">
-    <div>
-      <h3 className="font-semibold text-foreground">
-        {template.name}
-      </h3>
-      <p className="text-sm text-muted-foreground">
-        {template.category}
-      </p>
-    </div>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="font-semibold text-foreground">
+                                {template.name}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {template.category}
+                              </p>
+                            </div>
 
-    <Badge
-      variant="outline"
-      className="bg-primary/10 text-primary border-primary/30"
-    >
-      ${template.price}
-    </Badge>
-  </div>
+                            <Badge
+                              variant="outline"
+                              className="bg-primary/10 text-primary border-primary/30"
+                            >
+                              ${template.price}
+                            </Badge>
+                          </div>
 
-  <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
-    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-      <TrendingUp className="h-4 w-4" />
-      <span>0 downloads</span>
-    </div>
+                          <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <TrendingUp className="h-4 w-4" />
+                              <span>0 downloads</span>
+                            </div>
 
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-        >
-          <MoreVertical className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => abrirEditar(template)}>
-          <Edit className="h-4 w-4 mr-2" />
-          Editar
-        </DropdownMenuItem>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => abrirEditar(template)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Editar
+                                </DropdownMenuItem>
 
-        <DropdownMenuItem
-  className="text-red-500"
-  onClick={async () => {
-    if (confirm(`¿Seguro que quieres eliminar "${template.name}"?`)) {
-      const res = await fetch(`/api/plantillas/${template.id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        cargarPlantillas();
-      } else {
-        alert("Error al eliminar");
-      }
-    }
-  }}
->
-  <Trash2 className="h-4 w-4 mr-2" />
-  Eliminar
-</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </div>
-</CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
+                                <DropdownMenuItem
+                                  className="text-red-500"
+                                  onClick={async () => {
+                                    if (confirm(`¿Seguro que quieres eliminar "${template.name}"?`)) {
+                                      const res = await fetch(`/api/plantillas/${template.id}`, {
+                                        method: "DELETE",
+                                      });
+                                      if (res.ok) {
+                                        cargarPlantillas();
+                                      } else {
+                                        alert("Error al eliminar");
+                                      }
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Eliminar
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
               </div>
             </TabsContent>
 
@@ -470,19 +484,22 @@ return (
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">
-  Imagen de Preview
-</label>
-
-<Input
-  type="file"
-  accept="image/*"
-  onChange={(e) => {
-    if (e.target.files && e.target.files[0]) {
-      setPreviewImage(e.target.files[0])
-    }
-  }}
-  className="bg-background/50 border-border/50"
-/>
+                    Imagen de Preview
+                  </label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setPreviewImage(e.target.files[0])
+                      }
+                    }}
+                    className="bg-background/50 border-border/50"
+                    disabled={uploading}
+                  />
+                  {previewImage && (
+                    <p className="text-xs text-primary mt-1">{previewImage.name}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">Archivo ZIP de la plantilla *</label>
@@ -559,7 +576,7 @@ return (
         )}
       </AnimatePresence>
 
-      {/* Edit Template Modal - MEJORADO */}
+      {/* Edit Template Modal */}
       <AnimatePresence>
         {showEditModal && editingTemplate && (
           <motion.div
@@ -651,18 +668,29 @@ return (
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">URL de imagen de preview (opcional)</label>
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Imagen de Preview
+                  </label>
+                  {editingTemplate.image_url && !editPreviewImage && (
+                    <img
+                      src={editingTemplate.image_url}
+                      alt={editingTemplate.name}
+                      className="w-full h-32 object-cover rounded-lg mb-2 border border-border/50"
+                    />
+                  )}
                   <Input
-                    placeholder="https://..."
-                    value={editingTemplate.image_url || ""}
-                    onChange={(e) =>
-                      setEditingTemplate({
-                        ...editingTemplate,
-                        image_url: e.target.value
-                      })
-                    }
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setEditPreviewImage(e.target.files[0])
+                      }
+                    }}
                     className="bg-background/50 border-border/50"
                   />
+                  {editPreviewImage && (
+                    <p className="text-xs text-primary mt-1">{editPreviewImage.name}</p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-3 pt-2">
@@ -675,22 +703,23 @@ return (
                     onClick={async () => {
                       const formData = new FormData()
 
-formData.append("name", editingTemplate.name)
-formData.append("category", editingTemplate.category)
-formData.append("description", editingTemplate.description)
-formData.append("price", editingTemplate.price)
+                      formData.append("name", editingTemplate.name)
+                      formData.append("category", editingTemplate.category)
+                      formData.append("description", editingTemplate.description)
+                      formData.append("price", editingTemplate.price)
 
-if (previewImage) {
-  formData.append("image", previewImage)
-}
+                      if (editPreviewImage) {
+                        formData.append("image", editPreviewImage)
+                      }
 
-const res = await fetch(`/api/plantillas/${editingTemplate.id}`, {
-  method: "PUT",
-  body: formData,
-})
+                      const res = await fetch(`/api/plantillas/${editingTemplate.id}`, {
+                        method: "PUT",
+                        body: formData,
+                      })
 
                       if (res.ok) {
                         setShowEditModal(false)
+                        setEditPreviewImage(null)
                         cargarPlantillas()
                       } else {
                         alert("Error al actualizar")

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
 import fs from "fs/promises";
+import { existsSync } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 
@@ -22,41 +23,35 @@ export async function PUT(
 
     const formData = await request.formData();
     const name = formData.get("name") as string;
-const description = formData.get("description") as string;
-const category = formData.get("category") as string;
-const price = Number(formData.get("price"));
+    const description = formData.get("description") as string;
+    const category = formData.get("category") as string;
+    const price = Number(formData.get("price"));
 
-const image = formData.get("image") as File | null;
-let image_url: string | null = null;
+    const image = formData.get("image") as File | null;
+    let image_url: string | null = null;
 
-if (image && image.size > 0) {
-  // Obtener la extensión (.png, .jpg, etc.)
-  const extension = image.name.split(".").pop();
+    if (image && image.size > 0) {
+      const extension = image.name.split(".").pop();
+      const fileName = `${randomUUID()}.${extension}`;
 
-  // Crear un nombre único
-  const fileName = `${randomUUID()}.${extension}`;
+      const previewsDir = path.join(process.cwd(), "public", "uploads", "previews");
 
-  // Ruta donde se guardará la imagen
-  const uploadPath = path.join(
-    process.cwd(),
-    "public",
-    "uploads",
-    "previews",
-    fileName
-  );
+      // ⬇️ FIX: aseguramos que la carpeta exista antes de escribir
+      if (!existsSync(previewsDir)) {
+        await fs.mkdir(previewsDir, { recursive: true });
+      }
 
-  // Convertir la imagen en un Buffer
-  const bytes = await image.arrayBuffer();
-  const buffer = Buffer.from(bytes);
+      const uploadPath = path.join(previewsDir, fileName);
 
-  // Guardar la imagen en la carpeta
-  await fs.writeFile(uploadPath, buffer);
+      const bytes = await image.arrayBuffer();
+      const buffer = Buffer.from(bytes);
 
-  // Guardar la ruta para la base de datos
-  image_url = `/uploads/previews/${fileName}`;
-}
+      await fs.writeFile(uploadPath, buffer);
 
-    if (!name || price === undefined || price === null) {
+      image_url = `/uploads/previews/${fileName}`;
+    }
+
+    if (!name || price === undefined || price === null || isNaN(price)) {
       return NextResponse.json(
         { error: "Nombre y precio son obligatorios" },
         { status: 400 }
@@ -76,23 +71,16 @@ if (image && image.size > 0) {
     }
 
     await db.query(
-  `UPDATE templates
-   SET
-     name = ?,
-     description = ?,
-     price = ?,
-     category = ?,
-     image_url = COALESCE(?, image_url)
-   WHERE id = ?`,
-  [
-    name,
-    description || null,
-    price,
-    category || null,
-    image_url,
-    id,
-  ]
-);
+      `UPDATE templates
+       SET
+         name = ?,
+         description = ?,
+         price = ?,
+         category = ?,
+         image_url = COALESCE(?, image_url)
+       WHERE id = ?`,
+      [name, description || null, price, category || null, image_url, id]
+    );
 
     return NextResponse.json({
       message: "Plantilla actualizada correctamente",
