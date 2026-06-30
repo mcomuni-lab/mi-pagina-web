@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
+import fs from "fs/promises";
+import path from "path";
+import { randomUUID } from "crypto";
 
 // PUT: Actualizar una plantilla existente
 export async function PUT(
@@ -17,8 +20,41 @@ export async function PUT(
       );
     }
 
-    const body = await request.json();
-    const { name, description, price, category, image_url } = body;
+    const formData = await request.formData();
+    const name = formData.get("name") as string;
+const description = formData.get("description") as string;
+const category = formData.get("category") as string;
+const price = Number(formData.get("price"));
+
+const image = formData.get("image") as File | null;
+let image_url: string | null = null;
+
+if (image && image.size > 0) {
+  // Obtener la extensión (.png, .jpg, etc.)
+  const extension = image.name.split(".").pop();
+
+  // Crear un nombre único
+  const fileName = `${randomUUID()}.${extension}`;
+
+  // Ruta donde se guardará la imagen
+  const uploadPath = path.join(
+    process.cwd(),
+    "public",
+    "uploads",
+    "previews",
+    fileName
+  );
+
+  // Convertir la imagen en un Buffer
+  const bytes = await image.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  // Guardar la imagen en la carpeta
+  await fs.writeFile(uploadPath, buffer);
+
+  // Guardar la ruta para la base de datos
+  image_url = `/uploads/previews/${fileName}`;
+}
 
     if (!name || price === undefined || price === null) {
       return NextResponse.json(
@@ -40,18 +76,23 @@ export async function PUT(
     }
 
     await db.query(
-      `UPDATE templates 
-       SET name = ?, description = ?, price = ?, category = ?, image_url = ? 
-       WHERE id = ?`,
-      [
-        name,
-        description ?? null,
-        price,
-        category ?? null,
-        image_url ?? null,
-        id,
-      ]
-    );
+  `UPDATE templates
+   SET
+     name = ?,
+     description = ?,
+     price = ?,
+     category = ?,
+     image_url = COALESCE(?, image_url)
+   WHERE id = ?`,
+  [
+    name,
+    description || null,
+    price,
+    category || null,
+    image_url,
+    id,
+  ]
+);
 
     return NextResponse.json({
       message: "Plantilla actualizada correctamente",

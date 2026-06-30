@@ -67,7 +67,15 @@ export async function POST(request: Request) {
     const description = formData.get("description") as string;
     const price = formData.get("price") as string;
     const file = formData.get("file") as File;
-    const previewUrl = formData.get("previewUrl") as string;
+const previewImage = formData.get("image") as File | null;
+
+// ===== DEBUG =====
+console.log("================================");
+console.log("Imagen recibida:", previewImage);
+console.log("Nombre:", previewImage?.name);
+console.log("Tamaño:", previewImage?.size);
+console.log("================================");
+// =================
 
     if (!name || !category || !price || !file) {
       return NextResponse.json(
@@ -93,7 +101,35 @@ export async function POST(request: Request) {
 
     await extractZip(buffer, destDir);
 
-    const imageUrl = previewUrl || null;
+    let imageUrl: string | null = null;
+
+if (previewImage && previewImage.size > 0) {
+  console.log("✅ Guardando imagen...");
+
+  const extension = previewImage.name.split(".").pop();
+
+  const imageName = `${Date.now()}-${folder}.${extension}`;
+
+  const imagePath = path.join(
+    process.cwd(),
+    "public",
+    "uploads",
+    "previews",
+    imageName
+  );
+
+  console.log("Ruta:", imagePath);
+
+  const imageBuffer = Buffer.from(await previewImage.arrayBuffer());
+
+  await writeFile(imagePath, imageBuffer);
+
+  imageUrl = `/uploads/previews/${imageName}`;
+
+  console.log("✅ Imagen guardada en:", imageUrl);
+} else {
+  console.log("❌ No llegó ninguna imagen");
+}
     const [result]: any = await db.query(
       "INSERT INTO templates (name, category, description, price, folder, image_url) VALUES (?, ?, ?, ?, ?, ?)",
       [name, category, description || "", parseFloat(price), folder, imageUrl]
