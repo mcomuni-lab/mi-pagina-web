@@ -325,10 +325,24 @@ return (
           Editar
         </DropdownMenuItem>
 
-        <DropdownMenuItem className="text-red-500">
-          <Trash2 className="h-4 w-4 mr-2" />
-          Eliminar
-        </DropdownMenuItem>
+        <DropdownMenuItem
+  className="text-red-500"
+  onClick={async () => {
+    if (confirm(`¿Seguro que quieres eliminar "${template.name}"?`)) {
+      const res = await fetch(`/api/plantillas/${template.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        cargarPlantillas();
+      } else {
+        alert("Error al eliminar");
+      }
+    }
+  }}
+>
+  <Trash2 className="h-4 w-4 mr-2" />
+  Eliminar
+</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   </div>
@@ -528,86 +542,145 @@ return (
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Edit Template Modal - MEJORADO */}
       <AnimatePresence>
-  {showEditModal && editingTemplate && (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
-    >
-      <div className="bg-card p-6 rounded-xl w-[500px]">
-        <h2 className="text-xl font-bold mb-4">
-          Editar plantilla
-        </h2>
-
-        <Input
-          className="mb-3"
-          value={editingTemplate.name}
-          onChange={(e)=>
-            setEditingTemplate({
-              ...editingTemplate,
-              name:e.target.value
-            })
-          }
-        />
-
-        <Textarea
-          className="mb-3"
-          value={editingTemplate.description}
-          onChange={(e)=>
-            setEditingTemplate({
-              ...editingTemplate,
-              description:e.target.value
-            })
-          }
-        />
-
-        <Input
-          type="number"
-          className="mb-3"
-          value={editingTemplate.price}
-          onChange={(e)=>
-            setEditingTemplate({
-              ...editingTemplate,
-              price:e.target.value
-            })
-          }
-        />
-
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="outline"
+        {showEditModal && editingTemplate && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             onClick={() => setShowEditModal(false)}
           >
-            Cancelar
-          </Button>
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card border border-border rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-foreground">Editar plantilla</h2>
+                <Button variant="ghost" size="icon" onClick={() => setShowEditModal(false)}><X className="h-5 w-5" /></Button>
+              </div>
 
-          <Button
-  onClick={async () => {
-    const res = await fetch(`/api/plantillas/${editingTemplate.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(editingTemplate),
-    })
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Nombre de la plantilla *</label>
+                  <Input
+                    placeholder="ej. Gym Pro"
+                    value={editingTemplate.name}
+                    onChange={(e) =>
+                      setEditingTemplate({
+                        ...editingTemplate,
+                        name: e.target.value
+                      })
+                    }
+                    className="bg-background/50 border-border/50"
+                  />
+                </div>
 
-    if (res.ok) {
-      setShowEditModal(false)
-      cargarPlantillas()
-    } else {
-      alert("Error al actualizar")
-    }
-  }}
->
-  Guardar
-</Button>
-        </div>
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Categoría *</label>
+                  <Select
+                    value={editingTemplate.category || ""}
+                    onValueChange={(value) =>
+                      setEditingTemplate({
+                        ...editingTemplate,
+                        category: value
+                      })
+                    }
+                  >
+                    <SelectTrigger className="bg-background/50 border-border/50">
+                      <SelectValue placeholder="Selecciona categoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Descripción</label>
+                  <Textarea
+                    placeholder="Describe tu plantilla..."
+                    value={editingTemplate.description || ""}
+                    onChange={(e) =>
+                      setEditingTemplate({
+                        ...editingTemplate,
+                        description: e.target.value
+                      })
+                    }
+                    className="bg-background/50 border-border/50 min-h-[80px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Precio (USD) *</label>
+                  <Input
+                    type="number"
+                    placeholder="49"
+                    value={editingTemplate.price}
+                    onChange={(e) =>
+                      setEditingTemplate({
+                        ...editingTemplate,
+                        price: e.target.value
+                      })
+                    }
+                    className="bg-background/50 border-border/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">URL de imagen de preview (opcional)</label>
+                  <Input
+                    placeholder="https://..."
+                    value={editingTemplate.image_url || ""}
+                    onChange={(e) =>
+                      setEditingTemplate({
+                        ...editingTemplate,
+                        image_url: e.target.value
+                      })
+                    }
+                    className="bg-background/50 border-border/50"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  <Button variant="outline" className="flex-1" onClick={() => setShowEditModal(false)}>
+                    Cancelar
+                  </Button>
+
+                  <Button
+                    className="flex-1 bg-primary hover:bg-primary/90"
+                    onClick={async () => {
+                      const res = await fetch(`/api/plantillas/${editingTemplate.id}`, {
+                        method: "PUT",
+                        headers: {
+                          "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(editingTemplate),
+                      })
+
+                      if (res.ok) {
+                        setShowEditModal(false)
+                        cargarPlantillas()
+                      } else {
+                        alert("Error al actualizar")
+                      }
+                    }}
+                  >
+                    Guardar
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
