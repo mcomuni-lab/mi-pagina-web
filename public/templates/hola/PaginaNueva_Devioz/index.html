@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Devioz — Soluciones TI</title>
+<meta name="description" content="Devioz: Soluciones integrales en software, IoT, ciberseguridad, diseño y marketing." />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<header class="navbar">
+  <div class="nav-inner">
+    <a href="#inicio" class="logo">
+      <img data-media="logo" alt="Devioz" class="logo-img" />
+    </a>
+
+    <nav id="main-nav-container"></nav>
+
+    <a href="login.html" class="nav-admin-btn" title="Panel administrador">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 9.5-8 10-4.5-.5-8-5-8-10V6l8-4z"/></svg>
+      Admin
+    </a>
+  </div>
+</header>
+
+<section id="inicio" class="hero">
+  <div class="hero-grid">
+    <div class="hero-text">
+      <p class="eyebrow" data-edit="hero.eyebrow">DEVIOZ - SOLUCIONES TI</p>
+      <h1>
+        <span data-edit="hero.title1">Liderando la</span>
+        <span class="accent-carousel" id="carousel-text" data-edit="hero.title2">Transformación</span>
+        <span data-edit="hero.title3">Digital</span>
+      </h1>
+      <p class="hero-desc" data-edit="hero.desc">Creando el Futuro Digital: Servicios Integrales de Software, IoT, Ciberseguridad, Diseño, Multimedia, Marketing y Más.</p>
+      <a class="hashtag-btn" href="#servicios" data-edit="hero.cta">#SOFTWARE</a>
+    </div>
+    <div class="hero-media">
+      <div class="laptop-frame">
+        <div class="laptop-screen">
+
+          <video id="video-hero" data-media="hero.video"
+                 autoplay muted loop playsinline preload="auto"></video>
+
+          <div class="video-controls-overlay" id="video-overlay">
+            <button class="main-center-play" id="main-play" aria-label="Reproducir / Pausar">
+              <svg id="main-play-icon" viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+
+            <div class="video-controls-bar">
+              <div class="progress-timeline" id="timeline-container">
+                <div class="progress-filled" id="progress-bar"></div>
+              </div>
+
+              <div class="controls-row">
+                <div class="left-controls">
+                  <span class="time-display" id="current-time">00:00</span>
+                  <button class="btn-control play-pause" id="play-btn" aria-label="Reproducir / Pausar">
+                    <svg id="play-btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  </button>
+                </div>
+                <div class="right-controls">
+                  <button class="btn-control mute" id="mute-btn" aria-label="Silenciar">
+                    <svg id="mute-btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zM19 12c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                  </button>
+                  <span class="time-display" id="total-duration">00:00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="laptop-base"></div>
+        <div class="laptop-foot"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="servicios" class="section light">
+  <div class="container">
+    <h2 class="section-title">
+      <span data-edit="serv.title1">Nuestros servicios son</span>
+      <span class="badge" data-edit="serv.title2">Personalizables</span>
+    </h2>
+    <p class="section-sub" data-edit="serv.sub">Descubre soluciones innovadoras diseñadas para potenciar tu negocio y llevar tu infraestructura al siguiente nivel.</p>
+    <div class="divider"></div>
+    <div class="services-grid" id="services-grid"></div>
+  </div>
+</section>
+
+<section id="caracteristicas" class="section">
+  <div class="container">
+    <h2 class="section-title" data-edit="carac.title">Características</h2>
+    <p class="section-sub" data-edit="carac.sub">Frameworks modernos te ofrecen múltiples opciones personalizables para crear soluciones robustas y escalables.</p>
+    <div class="divider"></div>
+    <div class="features-grid" id="features-grid"></div>
+  </div>
+</section>
+
+<section id="portafolio" class="section light">
+  <div class="container">
+    <h2 class="section-title" data-edit="port.title">Portafolio Devioz</h2>
+    <p class="section-sub" data-edit="port.sub">Selecciona una categoría para explorar nuestros proyectos de ingeniería y transformación digital.</p>
+    <div class="port-tabs" id="port-tabs"></div>
+    <div class="port-grid" id="port-grid"></div>
+  </div>
+</section>
+
+<section id="ventajas" class="section">
+  <div class="banner-cta">
+    <h2 data-edit="vent.banner">Devioz es la solución flexible que necesitas para impulsar tu negocio y maximizar tus resultados.</h2>
+    <p data-edit="vent.bannerSub">Proporciona una amplia gama de elementos para crear soluciones a medida.</p>
+  </div>
+  <div class="container">
+    <h3 class="section-title small" data-edit="vent.title">Ventajas de usar Devioz</h3>
+    <div class="divider"></div>
+    <div class="advantages-grid" id="advantages-grid"></div>
+  </div>
+</section>
+
+<footer id="contacto" class="footer">
+  <div class="container footer-grid">
+    <div>
+      <div class="logo">
+        <img data-media="logo" alt="Devioz" class="logo-img" />
+      </div>
+      <p data-edit="foot.about">Soluciones integrales en Gestión de Proyectos, Desarrollo de Software e IoT. Transformamos tu empresa con tecnología de vanguardia.</p>
+    </div>
+    <div>
+      <h4>NAVEGACIÓN</h4>
+      <ul id="footer-nav-container">
+        <li><a href="#inicio">Inicio</a></li>
+        <li><a href="#servicios">Servicios</a></li>
+        <li><a href="#caracteristicas">Características</a></li>
+        <li><a href="#portafolio">Portafolio</a></li>
+        <li><a href="#ventajas">Ventajas</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>SERVICIOS</h4>
+      <ul><li>Software a Medida</li><li>Cloud Computing</li><li>IoT Solutions</li><li>RPA Automatización</li><li>Diseño UX/UI</li></ul>
+    </div>
+    <div>
+      <h4 data-edit="foot.ctaTitle">¿LISTO PARA EMPEZAR?</h4>
+      <p data-edit="foot.ctaText">Cuéntanos tu proyecto y te contactamos en menos de 24h.</p>
+      <a href="#" class="cta-btn" data-edit="foot.ctaBtn">📅 Solicitar Ahora</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© <span data-edit="foot.year">2026</span> Devioz. Todos los derechos reservados.</span>
+    <span data-edit="foot.tag">CONSTRUYENDO EL FUTURO DE LA INGENIERÍA DE SOFTWARE.</span>
+  </div>
+</footer>
+
+<script src="js/db.js"></script>
+<script src="js/data.js"></script>
+<script src="js/site.js"></script>
+
+</body>
+</html>

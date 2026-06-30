@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,6 +9,12 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Upload, Plus, Search, MoreVertical, Edit, Trash2, Eye, Check,
   X, Clock, Users, FileText, LayoutGrid, Settings, Bell,
@@ -85,14 +91,31 @@ export default function AdminPage() {
   const [newTemplate, setNewTemplate] = useState({
     name: "", category: "", description: "", price: "", previewUrl: ""
   })
+    useEffect(() => {
+    cargarPlantillas()
+  }, [])
+
+  const cargarPlantillas = async () => {
+    try {
+      const res = await fetch("/api/plantillas")
+      const data = await res.json()
+
+      setTemplatesDB(data)
+    } catch (error) {
+      console.error(error)
+    }
+  }
   const [zipFile, setZipFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<"idle" | "success" | "error">("idle")
   const [uploadMessage, setUploadMessage] = useState("")
+  const [templatesDB, setTemplatesDB] = useState<any[]>([])
+  const [showEditModal, setShowEditModal] = useState(false)
+const [editingTemplate, setEditingTemplate] = useState<any>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const stats = [
-    { label: "Total Templates", value: templates.length.toString(), icon: Package, change: "+2 this week" },
+    { label: "Total Templates", value: templatesDB.length.toString(), icon: Package, change: "+2 this week" },
     { label: "Active Users", value: "1,247", icon: Users, change: "+12% this month" },
     { label: "Pending Requests", value: mockRequests.filter(r => r.status === "pending").length.toString(), icon: Clock, change: "3 new today" },
     { label: "Revenue", value: "$12,450", icon: DollarSign, change: "+8% this month" },
@@ -154,14 +177,18 @@ export default function AdminPage() {
         setUploadMessage("")
       }, 2000)
     } catch (err: any) {
-      setUploadStatus("error")
-      setUploadMessage(err.message || "Error inesperado")
-    } finally {
-      setUploading(false)
-    }
-  }
+  setUploadStatus("error")
+  setUploadMessage(err.message || "Error inesperado")
+} finally {
+  setUploading(false)
+}
+}
+const abrirEditar = (template: any) => {
+  setEditingTemplate(template)
+  setShowEditModal(true)
+}
 
-  return (
+return (
     <div className="min-h-screen bg-background">
       <main className="flex-1 p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
@@ -240,7 +267,11 @@ export default function AdminPage() {
                 </Select>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {templates.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).map((template, index) => (
+                {templatesDB
+  .filter((t) =>
+    t.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+  .map((template, index) => (
                   <motion.div key={template.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * 0.05 }}>
                     <Card className="bg-card/50 border-border/50 overflow-hidden group">
                       <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-accent/20">
@@ -253,21 +284,55 @@ export default function AdminPage() {
                         </div>
                       </div>
                       <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="font-semibold text-foreground">{template.name}</h3>
-                            <p className="text-sm text-muted-foreground">{template.category}</p>
-                          </div>
-                          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">${template.price}</Badge>
-                        </div>
-                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <TrendingUp className="h-4 w-4" />
-                            <span>{template.downloads} downloads</span>
-                          </div>
-                          <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
-                        </div>
-                      </CardContent>
+  <div className="flex items-start justify-between">
+    <div>
+      <h3 className="font-semibold text-foreground">
+        {template.name}
+      </h3>
+      <p className="text-sm text-muted-foreground">
+        {template.category}
+      </p>
+    </div>
+
+    <Badge
+      variant="outline"
+      className="bg-primary/10 text-primary border-primary/30"
+    >
+      ${template.price}
+    </Badge>
+  </div>
+
+  <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
+    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+      <TrendingUp className="h-4 w-4" />
+      <span>0 downloads</span>
+    </div>
+
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+        >
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => abrirEditar(template)}>
+          <Edit className="h-4 w-4 mr-2" />
+          Editar
+        </DropdownMenuItem>
+
+        <DropdownMenuItem className="text-red-500">
+          <Trash2 className="h-4 w-4 mr-2" />
+          Eliminar
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+</CardContent>
                     </Card>
                   </motion.div>
                 ))}
@@ -463,6 +528,86 @@ export default function AdminPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      <AnimatePresence>
+  {showEditModal && editingTemplate && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+    >
+      <div className="bg-card p-6 rounded-xl w-[500px]">
+        <h2 className="text-xl font-bold mb-4">
+          Editar plantilla
+        </h2>
+
+        <Input
+          className="mb-3"
+          value={editingTemplate.name}
+          onChange={(e)=>
+            setEditingTemplate({
+              ...editingTemplate,
+              name:e.target.value
+            })
+          }
+        />
+
+        <Textarea
+          className="mb-3"
+          value={editingTemplate.description}
+          onChange={(e)=>
+            setEditingTemplate({
+              ...editingTemplate,
+              description:e.target.value
+            })
+          }
+        />
+
+        <Input
+          type="number"
+          className="mb-3"
+          value={editingTemplate.price}
+          onChange={(e)=>
+            setEditingTemplate({
+              ...editingTemplate,
+              price:e.target.value
+            })
+          }
+        />
+
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowEditModal(false)}
+          >
+            Cancelar
+          </Button>
+
+          <Button
+  onClick={async () => {
+    const res = await fetch(`/api/plantillas/${editingTemplate.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(editingTemplate),
+    })
+
+    if (res.ok) {
+      setShowEditModal(false)
+      cargarPlantillas()
+    } else {
+      alert("Error al actualizar")
+    }
+  }}
+>
+  Guardar
+</Button>
+        </div>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
     </div>
   )
 }

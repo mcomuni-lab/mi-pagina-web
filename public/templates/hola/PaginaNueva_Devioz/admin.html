@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Panel Administrador — Devioz</title>
+<link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="admin-sidebar">
+  <div class="brand">
+    <div class="brand-mark">D</div>
+    <div class="brand-text">
+      <strong>Devioz</strong>
+      <span>Admin Panel</span>
+    </div>
+  </div>
+
+  <nav class="admin-nav">
+    <span class="nav-section">Contenido</span>
+    <a href="#tab-textos" class="active"><span class="ico">📝</span> Textos</a>
+    <a href="#tab-menu"><span class="ico">🗺️</span> Menú</a>
+    <a href="#tab-media"><span class="ico">🖼️</span> Multimedia</a>
+    <a href="#tab-fondos"><span class="ico">🌄</span> Fondos</a>
+    <a href="#tab-colores"><span class="ico">🎨</span> Colores</a>
+
+    <span class="nav-section">Secciones</span>
+    <a href="#tab-servicios"><span class="ico">⚙️</span> Servicios</a>
+    <a href="#tab-caracteristicas"><span class="ico">✨</span> Características</a>
+    <a href="#tab-portafolio"><span class="ico">📁</span> Portafolio</a>
+    <a href="#tab-ventajas"><span class="ico">⭐</span> Ventajas</a>
+  </nav>
+
+  <div class="sidebar-foot">
+    <a href="index.html" class="back-link">← Salir al sitio</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="admin-main">
+  <header class="topbar">
+    <div>
+      <h1>Panel Administrador</h1>
+      <p class="muted">Gestiona todo el contenido de tu sitio Devioz en tiempo real.</p>
+    </div>
+    <div class="topbar-actions">
+      <a href="index.html" class="btn ghost" target="_blank" rel="noopener">👁 Ver sitio</a>
+      <button id="btn-export" class="btn">⬇ Exportar JSON</button>
+      <label class="btn ghost">⬆ Importar
+        <input type="file" id="file-import" accept="application/json" hidden />
+      </label>
+      <button id="btn-reset" class="btn danger">↺ Restaurar</button>
+    </div>
+  </header>
+
+  <!-- STAT CARDS -->
+  <section class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-meta">
+        <span>Servicios</span>
+        <h3 id="stat-services">0</h3>
+        <small class="up">+ Editables en vivo</small>
+      </div>
+      <div class="stat-ico">⚙️</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-meta">
+        <span>Características</span>
+        <h3 id="stat-features">0</h3>
+        <small class="up">+ Cards con imagen</small>
+      </div>
+      <div class="stat-ico">✨</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-meta">
+        <span>Proyectos portafolio</span>
+        <h3 id="stat-portitems">0</h3>
+        <small class="up">Categorías dinámicas</small>
+      </div>
+      <div class="stat-ico">📁</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-meta">
+        <span>Ventajas</span>
+        <h3 id="stat-advantages">0</h3>
+        <small class="up">Diferenciadores</small>
+      </div>
+      <div class="stat-ico">⭐</div>
+    </div>
+  </section>
+
+  <!-- TABS -->
+  <section id="tab-textos" class="tab active">
+    <div class="panel-head"><h2>Textos editables</h2><p class="hint">Los cambios se guardan automáticamente al salir del campo.</p></div>
+    <div id="texts-form" class="grid-form"></div>
+  </section>
+
+  <section id="tab-menu" class="tab">
+    <div class="panel-head"><h2>Menú de navegación</h2><p class="hint">Agrega, edita o elimina pestañas del menú superior.</p></div>
+
+    <div class="menu-manager-box">
+      <h3>+ Crear nueva pestaña</h3>
+      <div class="menu-row">
+        <div class="menu-field">
+          <label>Nombre del botón</label>
+          <input type="text" id="menu-name-input" placeholder="Ej: Blog, Preguntas, Tienda" />
+        </div>
+        <div class="menu-field">
+          <label>Enlace o ID de sección</label>
+          <input type="text" id="menu-link-input" placeholder="Ej: #blog o /blog.html" />
+        </div>
+        <button class="btn primary" onclick="addCustomMenuItem()">Añadir</button>
+      </div>
+    </div>
+
+    <h3 class="subhead">Enlaces actuales</h3>
+    <div id="menu-links-list" class="cards-list"></div>
+  </section>
+
+  <section id="tab-media" class="tab">
+    <div class="panel-head"><h2>Imágenes y videos</h2><p class="hint">Sube logos, imagen hero o video hero. Se guardan en IndexedDB.</p></div>
+    <div id="media-form" class="media-list"></div>
+  </section>
+
+  <section id="tab-fondos" class="tab">
+    <div class="panel-head"><h2>Fondos de sección</h2><p class="hint">Una imagen de fondo por sección. Se aplica automáticamente.</p></div>
+    <div id="bg-form" class="media-list"></div>
+  </section>
+
+  <section id="tab-colores" class="tab">
+    <div class="panel-head"><h2>Colores del sitio</h2><p class="hint">Personaliza la paleta del sitio en tiempo real.</p></div>
+    <div id="colors-form" class="grid-form"></div>
+  </section>
+
+  <section id="tab-servicios" class="tab">
+    <div class="panel-head"><h2>Servicios</h2><button class="btn primary" data-add="services">+ Añadir servicio</button></div>
+    <div id="services-list" class="cards-list"></div>
+  </section>
+
+  <section id="tab-caracteristicas" class="tab">
+    <div class="panel-head"><h2>Características</h2><button class="btn primary" data-add="features">+ Añadir característica</button></div>
+    <div id="features-list" class="cards-list"></div>
+  </section>
+
+  <section id="tab-portafolio" class="tab">
+    <div class="panel-head"><h2>Portafolio</h2></div>
+    <h3 class="subhead">Categorías</h3>
+    <button class="btn primary" data-add="portCats">+ Añadir categoría</button>
+    <div id="portcats-list" class="cards-list"></div>
+    <h3 class="subhead">Proyectos</h3>
+    <button class="btn primary" data-add="portItems">+ Añadir proyecto</button>
+    <div id="portitems-list" class="cards-list"></div>
+  </section>
+
+  <section id="tab-ventajas" class="tab">
+    <div class="panel-head"><h2>Ventajas</h2><button class="btn primary" data-add="advantages">+ Añadir ventaja</button></div>
+    <div id="advantages-list" class="cards-list"></div>
+  </section>
+
+  <!-- Productos: contenedor oculto requerido por admin.js (no se renderiza) -->
+  <section id="tab-productos" class="tab" style="display:none">
+    <button data-add="products" hidden></button>
+    <div id="products-list"></div>
+  </section>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  function addCustomMenuItem() {
+    const name = document.getElementById('menu-name-input').value.trim();
+    const link = document.getElementById('menu-link-input').value.trim();
+    if(!name || !link) { alert("Por favor completa el nombre y el enlace de la sección."); return; }
+    alert(`¡Éxito! Añadiendo pestaña: "${name}" apuntando a "${link}".`);
+    document.getElementById('menu-name-input').value = "";
+    document.getElementById('menu-link-input').value = "";
+  }
+
+  // Stat counters (se hidratan después de que admin.js cargue STORE)
+  window.addEventListener('load', () => {
+    try {
+      const d = STORE.load();
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      set('stat-services', (d.services||[]).length);
+      set('stat-features', (d.features||[]).length);
+      set('stat-portitems', (d.portItems||[]).length);
+      set('stat-advantages', (d.advantages||[]).length);
+    } catch(_) {}
+  });
+</script>
+
+<script src="js/db.js"></script>
+<script src="js/data.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
