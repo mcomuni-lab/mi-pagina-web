@@ -5,6 +5,44 @@ import { existsSync } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 
+// GET: Obtener una sola plantilla por su id
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: idParam } = await params;
+    const id = Number(idParam);
+
+    if (!id || isNaN(id)) {
+      return NextResponse.json(
+        { error: "ID de plantilla inválido" },
+        { status: 400 }
+      );
+    }
+
+    const [rows]: any = await db.query(
+      "SELECT * FROM templates WHERE id = ? LIMIT 1",
+      [id]
+    );
+
+    if (!rows || rows.length === 0) {
+      return NextResponse.json(
+        { error: "Plantilla no encontrada" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(rows[0]);
+  } catch (error: any) {
+    console.error("Error al obtener plantilla:", error);
+    return NextResponse.json(
+      { error: "Error de base de datos al obtener la plantilla" },
+      { status: 500 }
+    );
+  }
+}
+
 // PUT: Actualizar una plantilla existente
 export async function PUT(
   request: Request,

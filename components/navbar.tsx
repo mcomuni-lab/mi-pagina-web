@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -14,6 +14,7 @@ import {
   X,
   Sun,
   Moon,
+  LogOut,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
@@ -30,20 +31,54 @@ const navItems = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
+
+  const [userName, setUserName] = useState<string | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    const cargarUsuario = async () => {
+      try {
+        const res = await fetch('/api/users/me');
+        if (!res.ok) {
+          setUserName(null);
+          return;
+        }
+        const data = await res.json();
+        setUserName(data.name);
+      } catch (error) {
+        setUserName(null);
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+
+    cargarUsuario();
+  }, []);
+
+  const getIniciales = (name: string) => {
+    const partes = name.trim().split(' ');
+    if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+    return (partes[0][0] + partes[1][0]).toUpperCase();
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/users/logout', { method: 'POST' });
+    setUserName(null);
+    router.push('/register');
+  };
+
   return (
     <nav className="sticky top-0 z-50 w-full glass border-b">
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
@@ -89,9 +124,37 @@ export function Navbar() {
               <Bell className="w-5 h-5" />
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full" />
             </Button>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-sm font-medium text-white">JD</span>
-            </div>
+
+            {!loadingUser && userName && (
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center"
+                  title={userName}
+                >
+                  <span className="text-sm font-medium text-white">
+                    {getIniciales(userName)}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleLogout}
+                  aria-label="Cerrar sesión"
+                  title="Cerrar sesión"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+
+            {!loadingUser && !userName && (
+              <Link href="/register">
+                <Button variant="outline" size="sm">
+                  Iniciar sesión
+                </Button>
+              </Link>
+            )}
+
             <Button
               variant="ghost"
               size="icon"

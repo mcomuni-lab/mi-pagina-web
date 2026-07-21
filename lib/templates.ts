@@ -9,6 +9,7 @@ export interface Template {
   featured: boolean;
   description: string;
   tags: string[];
+  folder?: string;
 }
 
 export interface TemplateConfig {
@@ -27,17 +28,21 @@ export interface TemplateConfig {
   content: {
     businessName: string;
     tagline: string;
+    heroTitle: string;
     description: string;
     ctaText: string;
     aboutText: string;
-  };
+    bannerTitle: string;
+    bannerSubtitle: string;
+    bannerButtonText: string;
+  } & Record<string, string>;
   images: {
-    logo: string;
-    banner: string;
-    heroImage: string;
-    aboutImage: string;
-    galleryImages: string[];
-  };
+  logo: string;
+  banner: string;
+  heroImage: string;
+  aboutImage: string;
+  galleryImages: string[];
+} & Record<string, string | string[]>;
   sections: {
     hero: boolean;
     about: boolean;
@@ -233,9 +238,13 @@ export const defaultConfig: TemplateConfig = {
   content: {
     businessName: 'Your Business',
     tagline: 'Your Amazing Tagline Here',
+    heroTitle: 'Be strong',
     description: 'Describe your business in a few compelling sentences that capture the essence of what you do.',
     ctaText: 'Get Started',
     aboutText: 'Tell your story here. Share your mission, values, and what makes your business unique.',
+    bannerTitle: 'Registration now to get more deals',
+    bannerSubtitle: 'Where health, beauty and fitness meet.',
+    bannerButtonText: 'Appointment',
   },
   images: {
     logo: '',

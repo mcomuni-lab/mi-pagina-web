@@ -10,11 +10,11 @@ interface ColorPanelProps {
 }
 
 const colorFields = [
-  { key: 'primary', label: 'Primary Color' },
-  { key: 'secondary', label: 'Secondary Color' },
-  { key: 'background', label: 'Background' },
-  { key: 'text', label: 'Text Color' },
-  { key: 'button', label: 'Button Color' },
+  { key: 'primary', label: 'Color principal' },
+  { key: 'secondary', label: 'Color secundario' },
+  { key: 'background', label: 'Fondo' },
+  { key: 'text', label: 'Color del texto' },
+  { key: 'button', label: 'Color del botón' },
 ] as const;
 
 export function ColorPanel({ config, updateConfig }: ColorPanelProps) {
@@ -30,7 +30,7 @@ export function ColorPanel({ config, updateConfig }: ColorPanelProps) {
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
-        Customize the color scheme of your website. Changes are reflected in real-time.
+        Personaliza la combinación de colores de tu sitio web. Los cambios se reflejan en tiempo real.
       </p>
 
       <div className="space-y-4">
@@ -64,7 +64,7 @@ export function ColorPanel({ config, updateConfig }: ColorPanelProps) {
 
       {/* Color Presets */}
       <div className="space-y-3">
-        <Label className="text-sm">Quick Presets</Label>
+        <Label className="text-sm">Preajustes rápidos</Label>
         <div className="grid grid-cols-4 gap-2">
           {[
             { primary: '#8b5cf6', secondary: '#1e1b4b', button: '#ef4444' },

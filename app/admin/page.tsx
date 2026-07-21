@@ -144,11 +144,17 @@ export default function AdminPage() {
   }
 
   const handleUploadTemplate = async () => {
-    if (!newTemplate.name || !newTemplate.category || !newTemplate.price || !zipFile) {
-      setUploadStatus("error")
-      setUploadMessage("Completa todos los campos y selecciona un archivo ZIP.")
-      return
-    }
+    if (
+  !newTemplate.name ||
+  !newTemplate.category ||
+  !newTemplate.price ||
+  !zipFile ||
+  !previewImage
+) {
+  setUploadStatus("error");
+  setUploadMessage("Completa todos los campos, selecciona un ZIP y una imagen preview.");
+  return;
+}
 
     setUploading(true)
     setUploadStatus("idle")

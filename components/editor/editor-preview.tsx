@@ -11,12 +11,17 @@ interface EditorPreviewProps {
 export function EditorPreview({ config, template }: EditorPreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  const previewSrc = template.folder
+    ? `/templates/${template.folder}/index.html`
+    : '/templates/restobar/index.html';
+
   const injectStyles = () => {
     const iframe = iframeRef.current;
     if (!iframe) return;
     const doc = iframe.contentDocument;
     if (!doc) return;
 
+    // ===== 1. COLORES =====
     const styleId = 'devioz-editor-styles';
     let style = doc.getElementById(styleId) as HTMLStyleElement;
     if (!style) {
@@ -27,115 +32,130 @@ export function EditorPreview({ config, template }: EditorPreviewProps) {
 
     style.textContent = `
       :root {
-        --gold-crayola: ${config.colors.primary} !important;
-        --smoky-black-1: ${config.colors.background} !important;
-        --smoky-black-2: ${config.colors.background} !important;
-        --smoky-black-3: ${config.colors.background} !important;
-        --eerie-black-1: ${config.colors.background} !important;
-        --eerie-black-2: ${config.colors.background} !important;
-        --eerie-black-3: ${config.colors.background} !important;
-        --eerie-black-4: ${config.colors.secondary} !important;
-        --white: ${config.colors.text} !important;
-        --fontFamily-dm_sans: '${config.typography.fontFamily}', sans-serif !important;
-        --fontFamily-forum: '${config.typography.fontFamily}', sans-serif !important;
-      }
-
-      body {
-        background-color: ${config.colors.background} !important;
-        color: ${config.colors.text} !important;
-        font-family: '${config.typography.fontFamily}', sans-serif !important;
-      }
-
-      .btn {
-        color: ${config.colors.primary} !important;
-        border-color: ${config.colors.primary} !important;
-      }
-
-      .btn::before {
-        background-color: ${config.colors.primary} !important;
-      }
-
-      .btn-secondary {
-        background-color: ${config.colors.primary} !important;
-        color: ${config.colors.background} !important;
-      }
-
-      .contact-number,
-      .section-subtitle,
-      .btn-text,
-      .menu-card .span,
-      .gold { 
-        color: ${config.colors.primary} !important; 
-      }
-
-      .separator {
-        border-color: ${config.colors.primary} !important;
-      }
-
-      .hover-underline::after {
-        border-color: ${config.colors.primary} !important;
-      }
-
-      ::-webkit-scrollbar-thumb {
-        background-color: ${config.colors.primary} !important;
-      }
-
-      .preload {
-        background-color: ${config.colors.primary} !important;
-      }
-
-      .back-top-btn {
-        background-color: ${config.colors.primary} !important;
+        --color-primary: ${config.colors.primary} !important;
+        --color-secondary: ${config.colors.secondary} !important;
+        --color-background: ${config.colors.background} !important;
+        --color-text: ${config.colors.text} !important;
+        --color-button: ${config.colors.button} !important;
+        --font-family: '${config.typography.fontFamily}', sans-serif !important;
       }
     `;
 
-    // Cambiar textos
-    const phoneEl = doc.querySelector('a[href^="tel"] .span') as HTMLElement;
-    if (phoneEl) phoneEl.textContent = config.contact.phone;
+    // ===== 2. TEXTOS =====
+    Object.entries(config.content).forEach(([key, value]) => {
+      if (typeof value !== 'string' || value === '') return;
+      const elementos = doc.querySelectorAll(`[data-editable="${key}"]`);
+      elementos.forEach((el) => {
+        const element = el as HTMLElement;
+        element.textContent = value;
+      });
+    });
 
-    const emailEl = doc.querySelector('a[href^="mailto"] .span') as HTMLElement;
-    if (emailEl) emailEl.textContent = config.contact.email;
+    Object.entries(config.contact).forEach(([key, value]) => {
+      if (typeof value !== 'string' || value === '') return;
+      const elementos = doc.querySelectorAll(`[data-editable="${key}"]`);
+      elementos.forEach((el) => {
+        const element = el as HTMLElement;
+        element.textContent = value;
+      });
+    });
 
-    const addressEl = doc.querySelector('.navbar .body-4') as HTMLElement;
-    if (addressEl) addressEl.textContent = config.contact.address;
+    // ===== 3. IMÁGENES =====
+    Object.entries(config.images).forEach(([key, value]) => {
+      if (typeof value !== 'string' || value === '') return;
+      const elementos = doc.querySelectorAll(
+        `[data-editable="${key}"]`
+      ) as NodeListOf<HTMLImageElement>;
+      elementos.forEach((img) => {
+        img.src = value;
+        img.setAttribute('src', value);
+      });
 
-    // Cambiar imágenes
-    if (config.images.logo) {
-      const logos = doc.querySelectorAll('.logo img') as NodeListOf<HTMLImageElement>;
-      logos.forEach(img => img.src = config.images.logo);
-    }
+      const backgroundElementos = doc.querySelectorAll(
+        `[data-editable-bg="${key}"]`
+      ) as NodeListOf<HTMLElement>;
+      backgroundElementos.forEach((element) => {
+        element.style.backgroundImage = `url(${value})`;
+        element.setAttribute('data-setbg', value);
+      });
+    });
 
-    if (config.images.heroImage) {
-      const heroImgs = doc.querySelectorAll('.slider-bg img') as NodeListOf<HTMLImageElement>;
-      heroImgs.forEach(img => img.src = config.images.heroImage);
+    // ===== 5. VIDEO =====
+    const heroVideo = (config as any).video?.heroVideo as string | undefined;
+    if (heroVideo) {
+      const videos = doc.querySelectorAll(
+        '[data-editable="heroVideo"]'
+      ) as NodeListOf<HTMLVideoElement>;
+      videos.forEach((video) => {
+        const source = video.querySelector('source');
+        if (source) {
+          source.src = heroVideo;
+        } else {
+          video.src = heroVideo;
+        }
+        video.load();
+      });
     }
   };
 
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
-    iframe.onload = () => injectStyles();
-  }, []);
+
+    const applyPreview = () => {
+      requestAnimationFrame(() => {
+        injectStyles();
+        window.setTimeout(() => injectStyles(), 150);
+      });
+    };
+
+    const handleLoad = () => {
+      applyPreview();
+    };
+
+    iframe.addEventListener('load', handleLoad);
+    if (iframe.contentDocument?.readyState === 'complete') {
+      applyPreview();
+    }
+
+    return () => iframe.removeEventListener('load', handleLoad);
+  }, [previewSrc]);
 
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe?.contentDocument?.body) return;
-    injectStyles();
-  }, [config]);
+
+    requestAnimationFrame(() => {
+      injectStyles();
+      window.setTimeout(() => injectStyles(), 100);
+    });
+  }, [
+    config.colors.primary,
+    config.colors.secondary,
+    config.colors.background,
+    config.colors.text,
+    config.colors.button,
+    config.typography.fontFamily,
+    config.content,
+    config.contact,
+    config.images,
+    (config as any).video?.heroVideo,
+  ]);
 
   return (
     <div className="rounded-xl overflow-hidden shadow-2xl border border-border/50">
       <iframe
+        key={previewSrc}
         ref={iframeRef}
-        src="/templates/restobar/index.html"
+        src={previewSrc}
         className="w-full border-0"
         title="Template Preview"
-        style={{ 
-          height: '85vh', 
+        style={{
+          height: '85vh',
           minHeight: '700px',
           transform: 'scale(0.75)',
           transformOrigin: 'top left',
-          width: '133%'
+          width: '133%',
         }}
       />
     </div>

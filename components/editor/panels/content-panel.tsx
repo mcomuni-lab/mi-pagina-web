@@ -7,13 +7,19 @@ import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
 import type { TemplateConfig } from '@/lib/templates';
 
+interface DynamicTextField {
+  key: string;
+  label: string;
+}
+
 interface ContentPanelProps {
   config: TemplateConfig;
   updateConfig: (updates: Partial<TemplateConfig>) => void;
+  dynamicTextFields?: DynamicTextField[];
 }
 
-export function ContentPanel({ config, updateConfig }: ContentPanelProps) {
-  const handleChange = (key: keyof typeof config.content, value: string) => {
+export function ContentPanel({ config, updateConfig, dynamicTextFields = [] }: ContentPanelProps) {
+  const handleChange = (key: string, value: string) => {
     updateConfig({
       content: {
         ...config.content,
@@ -25,69 +31,125 @@ export function ContentPanel({ config, updateConfig }: ContentPanelProps) {
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
-        Edit the text content and images for your website.
+        Edita el contenido de texto e imágenes de tu sitio web.
       </p>
 
       {/* Business Name */}
       <div className="space-y-2">
-        <Label htmlFor="businessName">Business Name</Label>
+        <Label htmlFor="businessName">Nombre del negocio</Label>
         <Input
           id="businessName"
           value={config.content.businessName}
           onChange={(e) => handleChange('businessName', e.target.value)}
-          placeholder="Your Business Name"
+          placeholder="El nombre de tu negocio"
         />
       </div>
 
       {/* Tagline */}
       <div className="space-y-2">
-        <Label htmlFor="tagline">Tagline / Hero Title</Label>
+        <Label htmlFor="tagline">Lema / título principal</Label>
         <Input
           id="tagline"
           value={config.content.tagline}
           onChange={(e) => handleChange('tagline', e.target.value)}
-          placeholder="Your amazing tagline"
+          placeholder="Tu increíble lema"
+        />
+      </div>
+
+      {/* Hero Title */}
+      <div className="space-y-2">
+        <Label htmlFor="heroTitle">Título del hero</Label>
+        <Input
+          id="heroTitle"
+          value={config.content.heroTitle}
+          onChange={(e) => handleChange('heroTitle', e.target.value)}
+          placeholder="Tu título principal"
         />
       </div>
 
       {/* Description */}
       <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">Descripción</Label>
         <Textarea
           id="description"
           value={config.content.description}
           onChange={(e) => handleChange('description', e.target.value)}
-          placeholder="Describe your business..."
+          placeholder="Describe tu negocio..."
           rows={3}
         />
       </div>
 
       {/* CTA Text */}
       <div className="space-y-2">
-        <Label htmlFor="ctaText">Call to Action Button</Label>
+        <Label htmlFor="ctaText">Botón de llamada a la acción</Label>
         <Input
           id="ctaText"
           value={config.content.ctaText}
           onChange={(e) => handleChange('ctaText', e.target.value)}
-          placeholder="Get Started"
+          placeholder="Comenzar"
         />
       </div>
 
       {/* About Text */}
       <div className="space-y-2">
-        <Label htmlFor="aboutText">About Section</Label>
+        <Label htmlFor="aboutText">Sección "Sobre nosotros"</Label>
         <Textarea
           id="aboutText"
           value={config.content.aboutText}
           onChange={(e) => handleChange('aboutText', e.target.value)}
-          placeholder="Tell your story..."
+          placeholder="Cuenta tu historia..."
           rows={4}
         />
       </div>
 
+      {/* Banner Title */}
+      <div className="space-y-2">
+        <Label htmlFor="bannerTitle">Título del banner</Label>
+        <Input
+          id="bannerTitle"
+          value={config.content.bannerTitle}
+          onChange={(e) => handleChange('bannerTitle', e.target.value)}
+          placeholder="Regístrate ahora"
+        />
+      </div>
+
+      {/* Banner Subtitle */}
+      <div className="space-y-2">
+        <Label htmlFor="bannerSubtitle">Subtítulo del banner</Label>
+        <Input
+          id="bannerSubtitle"
+          value={config.content.bannerSubtitle}
+          onChange={(e) => handleChange('bannerSubtitle', e.target.value)}
+          placeholder="Donde la salud y el fitness se unen"
+        />
+      </div>
+
+      {/* Banner Button Text */}
+      <div className="space-y-2">
+        <Label htmlFor="bannerButtonText">Texto del botón del banner</Label>
+        <Input
+          id="bannerButtonText"
+          value={config.content.bannerButtonText}
+          onChange={(e) => handleChange('bannerButtonText', e.target.value)}
+          placeholder="Cita"
+        />
+      </div>
+
+      {dynamicTextFields.map((field) => (
+        <div key={field.key} className="space-y-2">
+          <Label htmlFor={field.key}>{field.label}</Label>
+          <Input
+            id={field.key}
+            value={config.content[field.key] ?? ''}
+            onChange={(e) => handleChange(field.key, e.target.value)}
+            placeholder={field.label}
+          />
+        </div>
+      ))}
+
       {/* Image Uploads */}
       <div className="space-y-3">
-        <Label>Images</Label>
+        <Label>Imágenes</Label>
         <div className="grid gap-3">
           {['Logo', 'Banner', 'Gallery'].map((type) => (
             <Button
@@ -97,8 +159,8 @@ export function ContentPanel({ config, updateConfig }: ContentPanelProps) {
             >
               <Upload className="w-4 h-4 mr-3" />
               <div className="text-left">
-                <p className="text-sm font-medium">Upload {type}</p>
-                <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
+                <p className="text-sm font-medium">Subir {type}</p>
+                <p className="text-xs text-muted-foreground">PNG, JPG de hasta 5MB</p>
               </div>
             </Button>
           ))}

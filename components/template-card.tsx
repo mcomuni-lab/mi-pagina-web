@@ -12,7 +12,17 @@ interface TemplateCardProps {
   template: Template;
 }
 
+// Verifica que el nombre de carpeta sea seguro (sin ../ ni caracteres raros)
+function esCarpetaSegura(folder: string | null | undefined): boolean {
+  if (!folder) return false;
+  return /^[a-zA-Z0-9_-]+$/.test(folder);
+}
+
 export function TemplateCard({ template }: TemplateCardProps) {
+  const folder = (template as any).folder as string | null | undefined;
+  const previewDisponible = esCarpetaSegura(folder);
+  const previewUrl = previewDisponible ? `/templates/${folder}/index.html` : '';
+
   return (
     <motion.div
       className="group relative rounded-xl overflow-hidden glass glass-hover"
@@ -30,15 +40,13 @@ export function TemplateCard({ template }: TemplateCardProps) {
           className="object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
-        
-        {/* Featured Badge */}
+
         {template.featured && (
           <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground">
             Featured
           </Badge>
         )}
 
-        {/* Price Badge */}
         <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm text-sm font-semibold">
           ${template.price}
         </div>
@@ -46,7 +54,6 @@ export function TemplateCard({ template }: TemplateCardProps) {
 
       {/* Content */}
       <div className="p-4 space-y-3">
-        {/* Category & Rating */}
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground uppercase tracking-wider">
             {template.category}
@@ -58,17 +65,14 @@ export function TemplateCard({ template }: TemplateCardProps) {
           </div>
         </div>
 
-        {/* Name */}
         <h3 className="text-lg font-semibold group-hover:text-primary transition-colors">
           {template.name}
         </h3>
 
-        {/* Description */}
         <p className="text-sm text-muted-foreground line-clamp-2">
           {template.description}
         </p>
 
-        {/* Tags */}
         <div className="flex flex-wrap gap-2">
           {template.tags.slice(0, 3).map((tag) => (
             <Badge key={tag} variant="secondary" className="text-xs">
@@ -84,9 +88,18 @@ export function TemplateCard({ template }: TemplateCardProps) {
               Use Template
             </Button>
           </Link>
-          <Button variant="outline" className="px-3">
-            Preview
-          </Button>
+
+          {previewDisponible ? (
+            <a href={previewUrl} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" className="px-3">
+                Preview
+              </Button>
+            </a>
+          ) : (
+            <Button variant="outline" className="px-3" disabled title="Vista previa no disponible">
+              Preview
+            </Button>
+          )}
         </div>
       </div>
     </motion.div>

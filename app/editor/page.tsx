@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { Suspense, useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -22,7 +22,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import Link from 'next/link';
-import { templates, defaultConfig, type TemplateConfig } from '@/lib/templates';
+import { defaultConfig, type TemplateConfig, type Template } from '@/lib/templates';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { EditorSidebar } from '@/components/editor/editor-sidebar';
@@ -38,6 +38,11 @@ import { ImagesPanel } from '@/components/editor/panels/images-panel';
 type PanelType = 'colors' | 'typography' | 'images' | 'content' | 'sections' | 'social' | 'contact';
 type ViewportSize = 'desktop' | 'tablet' | 'mobile';
 
+type DynamicField = {
+  key: string;
+  label: string;
+};
+
 const panels = [
   { id: 'colors' as PanelType, label: 'Colores', icon: Palette },
   { id: 'typography' as PanelType, label: 'Tipografía', icon: Type },
@@ -48,21 +53,132 @@ const panels = [
   { id: 'contact' as PanelType, label: 'Contacto', icon: Settings },
 ];
 
-export default function EditorPage() {
-  const searchParams = useSearchParams();
-  const templateId = searchParams.get('template') || 'tech-startup';
-  const template = templates.find((t) => t.id === templateId) || templates[0];
+const formatFieldLabel = (key: string) =>
+  key
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/^./, (char) => char.toUpperCase());
 
+function EditorPageContent() {
+  const searchParams = useSearchParams();
+  const templateId = searchParams.get('template');
+
+  const [template, setTemplate] = useState<Template | null>(null);
+  const [loadingTemplate, setLoadingTemplate] = useState(true);
   const [config, setConfig] = useState<TemplateConfig>(defaultConfig);
   const [activePanel, setActivePanel] = useState<PanelType>('colors');
   const [viewport, setViewport] = useState<ViewportSize>('desktop');
   const [isSaving, setIsSaving] = useState(false);
+  const [dynamicTextFields, setDynamicTextFields] = useState<DynamicField[]>([]);
+
+  useEffect(() => {
+    if (!templateId) {
+      setLoadingTemplate(false);
+      return;
+    }
+
+    const cargarPlantilla = async () => {
+      try {
+        const res = await fetch(`/api/plantillas/${templateId}`);
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Error al cargar la plantilla');
+
+        setTemplate({
+          id: String(data.id),
+          name: data.name,
+          category: data.category,
+          price: Number(data.price),
+          rating: data.rating ?? 5,
+          reviews: data.reviews ?? 0,
+          image: data.image_url || '',
+          featured: data.featured ?? false,
+          description: data.description || '',
+          tags: data.tags ?? [],
+          folder: data.folder || '',
+        });
+      } catch (error) {
+        console.error('Error cargando plantilla:', error);
+      } finally {
+        setLoadingTemplate(false);
+      }
+    };
+
+    cargarPlantilla();
+  }, [templateId]);
+
+  useEffect(() => {
+    if (!template?.folder) {
+      setDynamicTextFields([]);
+      return;
+    }
+
+    const fixedTextKeys = new Set([
+      'businessName',
+      'tagline',
+      'heroTitle',
+      'description',
+      'ctaText',
+      'aboutText',
+      'bannerTitle',
+      'bannerSubtitle',
+      'bannerButtonText',
+    ]);
+
+    let cancelled = false;
+
+    const cargarCamposDinamicos = async () => {
+      try {
+        const htmlPath = `/templates/${template.folder}/index.html`;
+        const res = await fetch(htmlPath);
+        if (!res.ok) throw new Error('No se pudo cargar el HTML de la plantilla');
+
+        const html = await res.text();
+        if (cancelled) return;
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const discoveredKeys = new Set<string>();
+
+        doc.querySelectorAll('[data-editable]').forEach((element) => {
+          const key = element.getAttribute('data-editable');
+          if (!key || fixedTextKeys.has(key) || element instanceof HTMLImageElement) {
+            return;
+          }
+          discoveredKeys.add(key);
+        });
+
+        const fields = Array.from(discoveredKeys)
+          .map((key) => ({ key, label: formatFieldLabel(key) }))
+          .sort((a, b) => a.label.localeCompare(b.label));
+
+        if (!cancelled) {
+          setDynamicTextFields(fields);
+        }
+      } catch (error) {
+        console.error('Error generando campos dinámicos:', error);
+        if (!cancelled) {
+          setDynamicTextFields([]);
+        }
+      }
+    };
+
+    cargarCamposDinamicos();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [template?.folder]);
 
   const updateConfig = useCallback((updates: Partial<TemplateConfig>) => {
     setConfig((prev) => ({ ...prev, ...updates }));
   }, []);
 
+  const handleSetActivePanel = useCallback((panel: string) => {
+    setActivePanel(panel as PanelType);
+  }, []);
+
   const handleSave = async () => {
+    if (!template) return;
     setIsSaving(true);
     try {
       await fetch('/api/configuraciones', {
@@ -86,6 +202,7 @@ export default function EditorPage() {
   };
 
   const handleSendToTeam = async () => {
+    if (!template) return;
     try {
       await fetch('/api/configuraciones', {
         method: 'POST',
@@ -120,7 +237,7 @@ export default function EditorPage() {
           />
         );
       case 'content':
-        return <ContentPanel config={config} updateConfig={updateConfig} />;
+        return <ContentPanel config={config} updateConfig={updateConfig} dynamicTextFields={dynamicTextFields} />;
       case 'sections':
         return <SectionsPanel config={config} updateConfig={updateConfig} />;
       case 'social':
@@ -131,6 +248,22 @@ export default function EditorPage() {
         return null;
     }
   };
+
+  if (loadingTemplate) {
+    return (
+      <div className="h-screen flex items-center justify-center text-muted-foreground">
+        Cargando plantilla...
+      </div>
+    );
+  }
+
+  if (!template) {
+    return (
+      <div className="h-screen flex items-center justify-center text-muted-foreground">
+        Plantilla no encontrada.
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
@@ -202,7 +335,7 @@ export default function EditorPage() {
         <EditorSidebar
           panels={panels}
           activePanel={activePanel}
-          setActivePanel={setActivePanel}
+          setActivePanel={handleSetActivePanel}
         />
 
         <motion.div
@@ -241,5 +374,13 @@ export default function EditorPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function EditorPage() {
+  return (
+    <Suspense fallback={<div className="h-screen flex items-center justify-center text-muted-foreground">Cargando editor...</div>}>
+      <EditorPageContent />
+    </Suspense>
   );
 }

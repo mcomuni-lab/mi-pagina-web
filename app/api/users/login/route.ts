@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'clave-temporal-cambiar';
 
 export async function POST(req: Request) {
   try {
@@ -21,7 +24,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Contraseña incorrecta' }, { status: 400 });
     }
 
-    return NextResponse.json({ message: 'Login exitoso', name: user.name });
+    const token = jwt.sign(
+      { id: user.id, name: user.name, email: user.email },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    const response = NextResponse.json({
+      message: 'Login exitoso',
+      name: user.name,
+    });
+
+    response.cookies.set('session_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return response;
   } catch (error) {
     return NextResponse.json({ error: 'Error del servidor' }, { status: 500 });
   }
