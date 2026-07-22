@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, type ElementType } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -437,7 +437,13 @@ export default function AdminPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                              <category.icon className="h-5 w-5 text-primary" />
+                              {(() => {
+                                const CategoryIcon = category.icon as ElementType
+
+                                return (
+                                  <CategoryIcon className="h-5 w-5 text-primary" />
+                                )
+                              })()}
                             </div>
                             <div>
                               <h3 className="font-semibold text-foreground">{category.name}</h3>
